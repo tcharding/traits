@@ -46,7 +46,7 @@ macro_rules! block_cipher_test {
 
                 // check that `encrypt_blocks` and `encrypt_block`
                 // result in the same ciphertext
-                state.encrypt_blocks_mut(&mut blocks1, |_| {});
+                state.encrypt_blocks_mut(&mut blocks1);
                 for b in blocks2.iter_mut() {
                     state.encrypt_block_mut(b);
                 }
@@ -56,7 +56,7 @@ macro_rules! block_cipher_test {
 
                 // check that `encrypt_blocks` and `encrypt_block`
                 // result in the same plaintext
-                state.decrypt_blocks_mut(&mut blocks1, |_| {});
+                state.decrypt_blocks_mut(&mut blocks1);
                 for b in blocks2.iter_mut() {
                     state.decrypt_block_mut(b);
                 }
@@ -126,7 +126,7 @@ macro_rules! block_encryptor_bench {
             let mut blocks = vec![Default::default(); 16 * 1024];
 
             bh.iter(|| {
-                cipher.encrypt_blocks_mut(&mut blocks, |_| {});
+                cipher.encrypt_blocks_mut(&mut blocks);
                 test::black_box(&blocks);
             });
             bh.bytes = (blocks.len() * blocks[0].len()) as u64;
@@ -163,7 +163,7 @@ macro_rules! block_decryptor_bench {
             let mut blocks = vec![Default::default(); 16 * 1024];
 
             bh.iter(|| {
-                cipher.encrypt_blocks_mut(&mut blocks, |_| {});
+                cipher.encrypt_blocks_mut(&mut blocks);
                 test::black_box(&blocks);
             });
             bh.bytes = (blocks.len() * blocks[0].len()) as u64;
