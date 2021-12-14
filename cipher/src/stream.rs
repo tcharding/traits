@@ -123,7 +123,7 @@ pub trait StreamCipher {
     /// method will panic without modifying `buf`.
     #[inline]
     fn write_keystream(&mut self, buf: &mut [u8]) {
-        self.try_write_keystream(buf.into()).unwrap();
+        self.try_write_keystream(buf).unwrap();
     }
 }
 
