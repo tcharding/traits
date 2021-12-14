@@ -75,12 +75,12 @@ checksum = "baf1de4339761588bc0619e3cbc0120ee582ebb74b53b4efbf79117bd2da40fd"
 
 [[package]]
 name = "cipher"
-version = "0.4.0-pre"
+version = "0.4.0"
 dependencies = [
  "blobby",
  "crypto-common",
  "generic-array",
- "rand_core",
+ "inout",
 ]
 
 [[package]]
@@ -178,6 +178,14 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "853f769599eb31de176303197b7ba4973299c38c7a7604a6bc88c3eef05b9b46"
 dependencies = [
  "proc-macro-hack",
+]
+
+[[package]]
+name = "inout"
+version = "0.1.0"
+source = "git+https://github.com/RustCrypto/utils?branch=add_inout#57eebda9b2455752b8ae7fe59a8341cf9e09a4ef"
+dependencies = [
+ "generic-array",
 ]
 
 [[package]]

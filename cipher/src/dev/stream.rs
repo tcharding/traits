@@ -8,7 +8,7 @@ macro_rules! stream_cipher_test {
         #[test]
         fn $name() {
             use cipher::generic_array::GenericArray;
-            use cipher::{blobby::Blob4Iterator, NewCipher, StreamCipher};
+            use cipher::{blobby::Blob4Iterator, KeyIvInit, StreamCipher};
 
             let data = include_bytes!(concat!("data/", $test_name, ".blb"));
             for (i, row) in Blob4Iterator::new(data).unwrap().enumerate() {
@@ -44,7 +44,7 @@ macro_rules! stream_cipher_seek_test {
         #[test]
         fn $name() {
             use cipher::generic_array::GenericArray;
-            use cipher::{NewCipher, StreamCipher, StreamCipherSeek};
+            use cipher::{KeyIvInit, StreamCipher, StreamCipherSeek};
 
             fn get_cipher() -> $cipher {
                 <$cipher>::new(&Default::default(), &Default::default())
@@ -97,7 +97,7 @@ macro_rules! stream_cipher_async_test {
         #[test]
         fn $name() {
             use cipher::generic_array::GenericArray;
-            use cipher::{blobby::Blob4Iterator, AsyncStreamCipher, NewCipher};
+            use cipher::{blobby::Blob4Iterator, AsyncStreamCipher, KeyIvInit};
 
             fn run_test(
                 key: &[u8],
@@ -172,7 +172,7 @@ macro_rules! stream_cipher_sync_bench {
     ($cipher:path) => {
         extern crate test;
 
-        use cipher::{generic_array::GenericArray, NewCipher, StreamCipher};
+        use cipher::{generic_array::GenericArray, KeyIvInit, StreamCipher};
         use test::Bencher;
 
         #[inline(never)]
@@ -224,7 +224,7 @@ macro_rules! stream_cipher_async_bench {
     ($cipher:path) => {
         extern crate test;
 
-        use cipher::{generic_array::GenericArray, AsyncStreamCipher, NewCipher};
+        use cipher::{generic_array::GenericArray, AsyncStreamCipher, KeyIvInit};
         use test::Bencher;
 
         #[inline(never)]

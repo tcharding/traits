@@ -1,7 +1,7 @@
 [package]
 name = "cipher"
 description = "Traits for describing block ciphers and stream ciphers"
-version = "0.4.0-pre"
+version = "0.4.0" # Also update html_root_url in lib.rs when bumping this
 authors = ["RustCrypto Developers"]
 license = "MIT OR Apache-2.0"
 readme = "README.md"
@@ -14,12 +14,16 @@ categories = ["cryptography", "no-std"]
 [dependencies]
 generic-array = "0.14"
 crypto-common = { version = "0.1", path = "../crypto-common" }
+#block-buffer = { version = "0.10.0", features = ["block-padding"] }
+# TODO: remove and use re-import from block-buffer
+inout = "0.1"
 
+# optional dependencies
 blobby = { version = "0.3", optional = true }
-rand_core = { version = "0.6", optional = true }
 
 [features]
-std = ["crypto-common/std", "rand_core/std"]
+std = ["crypto-common/std"]
+rand_core = ["crypto-common/rand_core"]
 dev = ["blobby"]
 
 [package.metadata.docs.rs]

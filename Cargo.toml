@@ -9,3 +9,6 @@ members = [
     "signature/async",
     "universal-hash",
 ]
+
+[patch.crates-io]
+inout = { git = "https://github.com/RustCrypto/utils", branch = "add_inout" }
