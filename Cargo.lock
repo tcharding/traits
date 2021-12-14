@@ -22,9 +22,9 @@ dependencies = [
 
 [[package]]
 name = "async-trait"
-version = "0.1.51"
+version = "0.1.52"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "44318e776df68115a881de9a8fd1b9e53368d7a4a5ce4cc48517da3393233a5e"
+checksum = "061a7acccaa286c011ddc30970520b98fa40e00c9d644633fb26b5fc63a265e3"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -183,16 +183,16 @@ dependencies = [
 [[package]]
 name = "inout"
 version = "0.1.0"
-source = "git+https://github.com/RustCrypto/utils?branch=add_inout#57eebda9b2455752b8ae7fe59a8341cf9e09a4ef"
+source = "git+https://github.com/RustCrypto/utils?branch=add_inout#8ded17a8c85a37b79bc679d4aceb9015c1fc8a28"
 dependencies = [
  "generic-array",
 ]
 
 [[package]]
 name = "libc"
-version = "0.2.109"
+version = "0.2.112"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f98a04dce437184842841303488f70d0188c5f51437d2a834dc097eafa909a01"
+checksum = "1b03d17f364a3a042d5e5d46b053bbbf82c92c9430c592dd4c064dc6ee997125"
 
 [[package]]
 name = "lock_api"

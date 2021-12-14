@@ -34,8 +34,8 @@ pub trait BlockEncrypt: BlockSizeUser {
             self,
             gen_in,
             body,
-            |_, _| unreachable!(),
             |state, mut chunk| state.encrypt_block_inout(chunk.get(0)),
+            |_, _| unreachable!(),
         )
     }
 
@@ -106,8 +106,8 @@ pub trait BlockDecrypt: BlockSizeUser {
             self,
             gen_in,
             body,
-            |_, _| unreachable!(),
             |state, mut chunk| state.decrypt_block_inout(chunk.get(0)),
+            |_, _| unreachable!(),
         )
     }
 
@@ -182,8 +182,8 @@ pub trait BlockEncryptMut: BlockSizeUser {
             self,
             gen_in,
             body,
-            |_, _| unreachable!(),
             |state, mut chunk| state.encrypt_block_inout_mut(chunk.get(0)),
+            |_, _| unreachable!(),
         )
     }
 
@@ -260,8 +260,8 @@ pub trait BlockDecryptMut: BlockSizeUser {
             self,
             gen_in,
             body,
-            |_, _| unreachable!(),
             |state, mut chunk| state.decrypt_block_inout_mut(chunk.get(0)),
+            |_, _| unreachable!(),
         )
     }
 
