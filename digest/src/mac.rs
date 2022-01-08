@@ -18,15 +18,21 @@ pub trait MacMarker {}
 #[cfg_attr(docsrs, doc(cfg(feature = "mac")))]
 pub trait Mac: OutputSizeUser + Sized {
     /// Create new value from fixed size key.
-    fn new(key: &Key<Self>) -> Self where Self: KeyInit;
+    fn new(key: &Key<Self>) -> Self
+    where
+        Self: KeyInit;
 
     /// Generate random key using the provided [`CryptoRng`].
     #[cfg(feature = "rand_core")]
     #[cfg_attr(docsrs, doc(cfg(feature = "rand_core")))]
-    fn generate_key(rng: impl CryptoRng + RngCore) -> Key<Self> where Self: KeyInit;
+    fn generate_key(rng: impl CryptoRng + RngCore) -> Key<Self>
+    where
+        Self: KeyInit;
 
     /// Create new value from variable size key.
-    fn new_from_slice(key: &[u8]) -> Result<Self, InvalidLength> where Self: KeyInit;
+    fn new_from_slice(key: &[u8]) -> Result<Self, InvalidLength>
+    where
+        Self: KeyInit;
 
     /// Update state using the provided data.
     fn update(&mut self, data: &[u8]);
@@ -71,12 +77,18 @@ pub trait Mac: OutputSizeUser + Sized {
 
 impl<T: Update + FixedOutput + MacMarker> Mac for T {
     #[inline(always)]
-    fn new(key: &Key<Self>) -> Self where Self: KeyInit {
+    fn new(key: &Key<Self>) -> Self
+    where
+        Self: KeyInit,
+    {
         KeyInit::new(key)
     }
 
     #[inline(always)]
-    fn new_from_slice(key: &[u8]) -> Result<Self, InvalidLength> where Self: KeyInit {
+    fn new_from_slice(key: &[u8]) -> Result<Self, InvalidLength>
+    where
+        Self: KeyInit,
+    {
         KeyInit::new_from_slice(key)
     }
 
@@ -161,7 +173,10 @@ impl<T: Update + FixedOutput + MacMarker> Mac for T {
     #[cfg(feature = "rand_core")]
     #[cfg_attr(docsrs, doc(cfg(feature = "rand_core")))]
     #[inline]
-    fn generate_key(rng: impl CryptoRng + RngCore) -> Key<Self>  where Self: KeyInit {
+    fn generate_key(rng: impl CryptoRng + RngCore) -> Key<Self>
+    where
+        Self: KeyInit,
+    {
         <T as KeyInit>::generate_key(rng)
     }
 }

@@ -253,6 +253,7 @@ impl<'a, BS: ArrayLength<u8>> BlockSizeUser for ApplyBlocksCtx<'a, BS> {
 
 impl<'a, BS: ArrayLength<u8>> StreamClosure for ApplyBlocksCtx<'a, BS> {
     #[inline(always)]
+    #[allow(clippy::needless_range_loop)]
     fn call<B: StreamBackend<BlockSize = BS>>(self, backend: &mut B) {
         if B::ParBlocksSize::USIZE > 1 {
             let (chunks, mut tail) = self.blocks.into_chunks::<B::ParBlocksSize>();
