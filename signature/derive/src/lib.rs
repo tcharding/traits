@@ -4,7 +4,6 @@
 //! types that impl `DigestSigner` or `DigestVerifier` respectively.
 
 #![crate_type = "proc-macro"]
-#![recursion_limit = "128"]
 #![deny(warnings, unused_import_braces, unused_qualifications)]
 #![forbid(unsafe_code)]
 
@@ -24,7 +23,7 @@ fn derive_signer(mut s: synstructure::Structure) -> TokenStream {
             Self: signature::DigestSigner<S::Digest, S>
         {
             fn try_sign(&self, msg: &[u8]) -> Result<S, signature::Error> {
-                self.try_sign_digest(S::Digest::new().chain(msg))
+                self.try_sign_digest(S::Digest::new_with_prefix(msg))
             }
         }
     })
@@ -61,7 +60,7 @@ fn derive_verifier(mut s: synstructure::Structure) -> TokenStream {
             Self: signature::DigestVerifier<S::Digest, S>
         {
             fn verify(&self, msg: &[u8], signature: &S) -> Result<(), signature::Error> {
-                self.verify_digest(S::Digest::new().chain(msg), signature)
+                self.verify_digest(S::Digest::new_with_prefix(msg), signature)
             }
         }
     })
@@ -110,7 +109,7 @@ mod tests {
                         Self: signature::DigestSigner<S::Digest, S>
                     {
                         fn try_sign(&self, msg: &[u8]) -> Result <S, signature::Error> {
-                            self.try_sign_digest(S::Digest::new().chain(msg))
+                            self.try_sign_digest(S::Digest::new_with_prefix(msg))
                         }
                     }
                 };
@@ -136,7 +135,7 @@ mod tests {
                         Self: signature::DigestVerifier<S::Digest, S>
                     {
                         fn verify(&self, msg: &[u8], signature: &S) -> Result<(), signature::Error> {
-                            self.verify_digest(S::Digest::new().chain(msg), signature)
+                            self.verify_digest(S::Digest::new_with_prefix(msg), signature)
                         }
                     }
                 };

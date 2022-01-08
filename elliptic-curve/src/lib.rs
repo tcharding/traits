@@ -1,3 +1,12 @@
+#![no_std]
+#![cfg_attr(docsrs, feature(doc_cfg))]
+#![forbid(unsafe_code, clippy::unwrap_used)]
+#![warn(missing_docs, rust_2018_idioms, unused_qualifications)]
+#![doc(
+    html_logo_url = "https://raw.githubusercontent.com/RustCrypto/media/8f1a9894/logo.svg",
+    html_favicon_url = "https://raw.githubusercontent.com/RustCrypto/media/8f1a9894/logo.svg",
+    html_root_url = "https://docs.rs/elliptic-curve/0.11.6"
+)]
 #![doc = include_str!("../README.md")]
 
 //! ## Usage
@@ -20,6 +29,13 @@
 //! the above crates, either via an external ECDSA implementation, or
 //! using native curve arithmetic where applicable.
 //!
+//! ## Type conversions
+//!
+//! The following chart illustrates the various conversions possible between
+//! the various types defined by this crate.
+//!
+//! ![Type Conversion Map](https://raw.githubusercontent.com/RustCrypto/media/master/img/elliptic-curve/type-transforms.svg)
+//!
 //! ## `serde` support
 //!
 //! When the `serde` feature of this crate is enabled, `Serialize` and
@@ -38,16 +54,6 @@
 //! [`p256`]: https://github.com/RustCrypto/elliptic-curves/tree/master/p256
 //! [`p384`]: https://github.com/RustCrypto/elliptic-curves/tree/master/p384
 //! [`ecdsa`]: https://github.com/RustCrypto/signatures/tree/master/ecdsa
-
-#![no_std]
-#![cfg_attr(docsrs, feature(doc_cfg))]
-#![forbid(unsafe_code, clippy::unwrap_used)]
-#![warn(missing_docs, rust_2018_idioms, unused_qualifications)]
-#![doc(
-    html_logo_url = "https://raw.githubusercontent.com/RustCrypto/media/8f1a9894/logo.svg",
-    html_favicon_url = "https://raw.githubusercontent.com/RustCrypto/media/8f1a9894/logo.svg",
-    html_root_url = "https://docs.rs/elliptic-curve/0.11.5"
-)]
 
 #[cfg(feature = "alloc")]
 #[allow(unused_imports)]
@@ -87,6 +93,14 @@ pub mod ecdh;
 
 #[cfg(feature = "jwk")]
 mod jwk;
+
+#[cfg(feature = "hash2curve")]
+#[doc(hidden)]
+pub mod hash2field;
+
+#[cfg(feature = "hash2curve")]
+#[cfg_attr(docsrs, doc(cfg(feature = "hash2curve")))]
+pub mod hash2curve;
 
 pub use crate::{
     error::{Error, Result},
