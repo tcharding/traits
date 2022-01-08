@@ -14,7 +14,7 @@ dependencies = [
 
 [[package]]
 name = "async-signature"
-version = "0.0.1"
+version = "0.1.0"
 dependencies = [
  "async-trait",
  "signature",
@@ -45,15 +45,6 @@ checksum = "847495c209977a90e8aad588b959d0ca9f5dc228096d29a6bd3defd53f35eaec"
 
 [[package]]
 name = "block-buffer"
-version = "0.9.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "4152116fd6e9dadb291ae18fc1ec3575ed6d84c29642d97890f4b4a3417297e4"
-dependencies = [
- "generic-array",
-]
-
-[[package]]
-name = "block-buffer"
 version = "0.10.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "f1d36a02058e76b040de25a4464ba1c80935655595b661505c8b39b664828b95"
@@ -78,7 +69,7 @@ name = "cipher"
 version = "0.4.0"
 dependencies = [
  "blobby",
- "crypto-common",
+ "crypto-common 0.1.2",
  "inout",
 ]
 
@@ -93,6 +84,15 @@ dependencies = [
 
 [[package]]
 name = "crypto-common"
+version = "0.1.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "683d6b536309245c849479fba3da410962a43ed8e51c26b729208ec0ac2798d0"
+dependencies = [
+ "generic-array",
+]
+
+[[package]]
+name = "crypto-common"
 version = "0.1.2"
 dependencies = [
  "generic-array",
@@ -101,22 +101,24 @@ dependencies = [
 
 [[package]]
 name = "digest"
-version = "0.9.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d3dd60d1080a57a05ab032377049e0591415d2b31afd7028356dbf3cc6dcb066"
+version = "0.10.1"
 dependencies = [
+ "blobby",
+ "block-buffer",
+ "crypto-common 0.1.2",
  "generic-array",
+ "subtle",
 ]
 
 [[package]]
 name = "digest"
 version = "0.10.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "b697d66081d42af4fba142d56918a3cb21dc8eb63372c6b85d14f44fb9c5979b"
 dependencies = [
- "blobby",
- "block-buffer 0.10.0",
- "crypto-common",
+ "block-buffer",
+ "crypto-common 0.1.1",
  "generic-array",
- "subtle",
 ]
 
 [[package]]
@@ -203,12 +205,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "opaque-debug"
-version = "0.3.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "624a8340c38c1b80fd549087862da4ba43e08858af025b236e509b6649fc13d5"
-
-[[package]]
 name = "password-hash"
 version = "0.3.2"
 dependencies = [
@@ -258,22 +254,20 @@ checksum = "d29ab0c6d3fc0ee92fe66e2d99f700eab17a8d57d1c1d3b748380fb20baa78cd"
 
 [[package]]
 name = "sha2"
-version = "0.9.9"
+version = "0.10.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "4d58a1e1bf39749807d89cf2d98ac2dfa0ff1cb3faa38fbb64dd88ac8013d800"
+checksum = "99c3bd8169c58782adad9290a9af5939994036b76187f7b4f0e6de91dbbfc0ec"
 dependencies = [
- "block-buffer 0.9.0",
  "cfg-if",
  "cpufeatures",
- "digest 0.9.0",
- "opaque-debug",
+ "digest 0.10.1 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
 [[package]]
 name = "signature"
-version = "1.4.0"
+version = "1.5.0"
 dependencies = [
- "digest 0.9.0",
+ "digest 0.10.1 (registry+https://github.com/rust-lang/crates.io-index)",
  "hex-literal",
  "rand_core",
  "sha2",
@@ -282,7 +276,7 @@ dependencies = [
 
 [[package]]
 name = "signature_derive"
-version = "1.0.0-pre.3"
+version = "1.0.0-pre.4"
 dependencies = [
  "proc-macro2",
  "quote",
