@@ -2,9 +2,10 @@ use crate::{
     errors::StreamCipherError, Block, OverflowError, SeekNum, StreamCipher, StreamCipherCore,
     StreamCipherSeek, StreamCipherSeekCore,
 };
-use core::slice;
-use crypto_common::{BlockSizeUser, Iv, IvSizeUser, Key, KeyInit, KeyIvInit, KeySizeUser};
-use generic_array::typenum::{IsLess, Le, NonZero, Unsigned, U256};
+use crypto_common::{
+    generic_array::typenum::{IsLess, Le, NonZero, Unsigned, U256},
+    BlockSizeUser, Iv, IvSizeUser, Key, KeyInit, KeyIvInit, KeySizeUser,
+};
 use inout::InOutBuf;
 
 /// Wrapper around [`StreamCipherCore`] implementations.
@@ -105,69 +106,25 @@ where
         if pos != 0 {
             if n < r {
                 // double slicing allows to remove panic branches
-                data.xor(&self.buffer[pos..][..n]);
+                data.xor_in2out(&self.buffer[pos..][..n]);
                 self.set_pos_unchecked(pos + n);
                 return Ok(());
             }
             let (mut left, right) = data.split_at(r);
             data = right;
-            left.xor(&self.buffer[pos..]);
+            left.xor_in2out(&self.buffer[pos..]);
         }
 
         let (blocks, mut leftover) = data.into_chunks();
-        self.core.apply_keystream_blocks(blocks, |_| {});
+        self.core.apply_keystream_blocks_inout(blocks);
 
         let n = leftover.len();
         if n != 0 {
-            self.core
-                .write_keystream_blocks(slice::from_mut(&mut self.buffer));
-            leftover.xor(&self.buffer[..n]);
+            self.core.write_keystream_block(&mut self.buffer);
+            leftover.xor_in2out(&self.buffer[..n]);
         }
         self.set_pos_unchecked(n);
 
-        Ok(())
-    }
-
-    #[inline]
-    fn try_write_keystream(&mut self, mut data: &mut [u8]) -> Result<(), StreamCipherError> {
-        self.check_remaining(data.len())?;
-
-        let pos = self.get_pos();
-        let r = self.remaining();
-        let n = data.len();
-        if pos != 0 {
-            if n < r {
-                // double slicing allows to remove panic branches
-                data.copy_from_slice(&self.buffer[pos..][..n]);
-                self.set_pos_unchecked(pos + n);
-                return Ok(());
-            }
-            let (left, right) = data.split_at_mut(r);
-            data = right;
-            left.copy_from_slice(&self.buffer[pos..]);
-        }
-
-        // SAFETY: we guarantee that `blocks` and `tail` point inside
-        // `data` and do not overlap
-        let (blocks, tail) = unsafe {
-            let bs = T::BlockSize::USIZE;
-            let chunks = data.len() / bs;
-            let tail_pos = bs * chunks;
-            let tail_len = data.len() - tail_pos;
-            let p = data.as_mut_ptr();
-            let chunks = slice::from_raw_parts_mut(p as *mut Block<T>, chunks);
-            let tail = slice::from_raw_parts_mut(p.add(tail_pos), tail_len);
-            (chunks, tail)
-        };
-        self.core.write_keystream_blocks(blocks);
-
-        let n = tail.len();
-        if n != 0 {
-            self.core
-                .write_keystream_blocks(slice::from_mut(&mut self.buffer));
-            tail.copy_from_slice(&self.buffer[..n]);
-        }
-        self.set_pos_unchecked(n);
         Ok(())
     }
 }
@@ -187,10 +144,7 @@ where
         let (block_pos, byte_pos) = new_pos.into_block_byte(T::BlockSize::U8)?;
         core.set_block_pos(block_pos);
         if byte_pos != 0 {
-            let mut block = Default::default();
-            let buf = InOutBuf::from_mut(&mut block);
-            core.apply_keystream_blocks(buf, |_| {});
-            *buffer = block;
+            self.core.write_keystream_block(buffer);
         }
         *pos = byte_pos;
         Ok(())

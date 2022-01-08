@@ -101,28 +101,53 @@ macro_rules! block_cipher_test {
 #[macro_export]
 #[cfg_attr(docsrs, doc(cfg(feature = "dev")))]
 macro_rules! block_encryptor_bench {
-    ($cipher:path, $block_name:ident, $blocks_name:ident $(,)? ) => {
+    (Key: $cipher:ty, $block_name:ident, $blocks_name:ident $(,)? ) => {
+        block_encryptor_bench!(
+            {
+                use $crate::KeyInit;
+                let key = test::black_box(Default::default());
+                <$cipher>::new(&key)
+            },
+            $cipher,
+            $block_name,
+            $blocks_name,
+        );
+    };
+    (KeyIv: $cipher:ty, $block_name:ident, $blocks_name:ident $(,)? ) => {
+        block_encryptor_bench!(
+            {
+                use $crate::KeyIvInit;
+                let key = test::black_box(Default::default());
+                let iv = test::black_box(Default::default());
+                <$cipher>::new(&key, &iv)
+            },
+            $cipher,
+            $block_name,
+            $blocks_name,
+        );
+    };
+    ($init:block, $cipher:ty, $block_name:ident, $blocks_name:ident $(,)? ) => {
         #[bench]
         pub fn $block_name(bh: &mut test::Bencher) {
-            use cipher::{BlockEncryptMut, KeyInit};
+            use cipher::BlockEncryptMut;
 
-            let key = Default::default();
-            let mut cipher = test::black_box(<$cipher>::new(&key));
-            let mut block = Default::default();
+            let mut cipher = $init;
+            let mut blocks = vec![Default::default(); 16 * 1024];
 
             bh.iter(|| {
-                cipher.encrypt_block_mut(&mut block);
-                test::black_box(&block);
+                for block in blocks.iter_mut() {
+                    cipher.encrypt_block_mut(block);
+                }
+                test::black_box(&blocks);
             });
-            bh.bytes = block.len() as u64;
+            bh.bytes = (blocks.len() * blocks[0].len()) as u64;
         }
 
         #[bench]
         pub fn $blocks_name(bh: &mut test::Bencher) {
-            use cipher::{BlockEncryptMut, KeyInit};
+            use cipher::BlockEncryptMut;
 
-            let key = Default::default();
-            let mut cipher = test::black_box(<$cipher>::new(&key));
+            let mut cipher = $init;
             let mut blocks = vec![Default::default(); 16 * 1024];
 
             bh.iter(|| {
@@ -138,32 +163,57 @@ macro_rules! block_encryptor_bench {
 #[macro_export]
 #[cfg_attr(docsrs, doc(cfg(feature = "dev")))]
 macro_rules! block_decryptor_bench {
-    ($cipher:path, $block_name:ident, $blocks_name:ident $(,)? ) => {
+    (Key: $cipher:ty, $block_name:ident, $blocks_name:ident $(,)? ) => {
+        block_decryptor_bench!(
+            {
+                use $crate::KeyInit;
+                let key = test::black_box(Default::default());
+                <$cipher>::new(&key)
+            },
+            $cipher,
+            $block_name,
+            $blocks_name,
+        );
+    };
+    (KeyIv: $cipher:ty, $block_name:ident, $blocks_name:ident $(,)? ) => {
+        block_decryptor_bench!(
+            {
+                use $crate::KeyIvInit;
+                let key = test::black_box(Default::default());
+                let iv = test::black_box(Default::default());
+                <$cipher>::new(&key, &iv)
+            },
+            $cipher,
+            $block_name,
+            $blocks_name,
+        );
+    };
+    ($init:block, $cipher:ty, $block_name:ident, $blocks_name:ident $(,)? ) => {
         #[bench]
         pub fn $block_name(bh: &mut test::Bencher) {
-            use cipher::{BlockEncryptMut, KeyInit};
+            use cipher::BlockDecryptMut;
 
-            let key = Default::default();
-            let mut cipher = test::black_box(<$cipher>::new(&key));
-            let mut block = Default::default();
+            let mut cipher = $init;
+            let mut blocks = vec![Default::default(); 16 * 1024];
 
             bh.iter(|| {
-                cipher.encrypt_block_mut(&mut block);
-                test::black_box(&block);
+                for block in blocks.iter_mut() {
+                    cipher.decrypt_block_mut(block);
+                }
+                test::black_box(&blocks);
             });
-            bh.bytes = block.len() as u64;
+            bh.bytes = (blocks.len() * blocks[0].len()) as u64;
         }
 
         #[bench]
         pub fn $blocks_name(bh: &mut test::Bencher) {
-            use cipher::{BlockEncryptMut, KeyInit};
+            use cipher::BlockDecryptMut;
 
-            let key = Default::default();
-            let mut cipher = test::black_box(<$cipher>::new(&key));
+            let mut cipher = $init;
             let mut blocks = vec![Default::default(); 16 * 1024];
 
             bh.iter(|| {
-                cipher.encrypt_blocks_mut(&mut blocks);
+                cipher.decrypt_blocks_mut(&mut blocks);
                 test::black_box(&blocks);
             });
             bh.bytes = (blocks.len() * blocks[0].len()) as u64;

@@ -16,6 +16,8 @@ extern crate std;
 #[cfg(feature = "rand_core")]
 pub use rand_core;
 
+pub use generic_array;
+
 use core::fmt;
 use generic_array::{typenum::Unsigned, ArrayLength, GenericArray};
 #[cfg(feature = "rand_core")]

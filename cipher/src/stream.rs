@@ -9,9 +9,12 @@ use crate::{Block, BlockDecryptMut, BlockEncryptMut};
 use inout::{InOutBuf, NotEqualError};
 
 /// Marker trait for block-level asynchronous stream ciphers
-pub trait AsyncStreamCipher: BlockEncryptMut + BlockDecryptMut + Sized {
+pub trait AsyncStreamCipher: Sized {
     /// Encrypt data using `InOutBuf`.
-    fn encrypt_inout(mut self, data: InOutBuf<'_, u8>) {
+    fn encrypt_inout(mut self, data: InOutBuf<'_, u8>)
+    where
+        Self: BlockEncryptMut,
+    {
         let (blocks, mut tail) = data.into_chunks();
         self.encrypt_blocks_inout_mut(blocks);
         let mut block = Block::<Self>::default();
@@ -24,7 +27,10 @@ pub trait AsyncStreamCipher: BlockEncryptMut + BlockDecryptMut + Sized {
     }
 
     /// Decrypt data using `InOutBuf`.
-    fn decrypt_inout(mut self, data: InOutBuf<'_, u8>) {
+    fn decrypt_inout(mut self, data: InOutBuf<'_, u8>)
+    where
+        Self: BlockDecryptMut,
+    {
         let (blocks, mut tail) = data.into_chunks();
         self.decrypt_blocks_inout_mut(blocks);
         let mut block = Block::<Self>::default();
@@ -35,24 +41,35 @@ pub trait AsyncStreamCipher: BlockEncryptMut + BlockDecryptMut + Sized {
             tail.get_out().copy_from_slice(&block[..n]);
         }
     }
-
     /// Encrypt data in place.
-    fn encrypt(self, buf: &mut [u8]) {
+    fn encrypt(self, buf: &mut [u8])
+    where
+        Self: BlockEncryptMut,
+    {
         self.encrypt_inout(buf.into());
     }
 
     /// Decrypt data in place.
-    fn decrypt(self, buf: &mut [u8]) {
+    fn decrypt(self, buf: &mut [u8])
+    where
+        Self: BlockDecryptMut,
+    {
         self.decrypt_inout(buf.into());
     }
 
     /// Encrypt data from buffer to buffer.
-    fn encrypt_b2b(self, in_buf: &[u8], out_buf: &mut [u8]) -> Result<(), NotEqualError> {
+    fn encrypt_b2b(self, in_buf: &[u8], out_buf: &mut [u8]) -> Result<(), NotEqualError>
+    where
+        Self: BlockEncryptMut,
+    {
         InOutBuf::new(in_buf, out_buf).map(|b| self.encrypt_inout(b))
     }
 
     /// Decrypt data from buffer to buffer.
-    fn decrypt_b2b(self, in_buf: &[u8], out_buf: &mut [u8]) -> Result<(), NotEqualError> {
+    fn decrypt_b2b(self, in_buf: &[u8], out_buf: &mut [u8]) -> Result<(), NotEqualError>
+    where
+        Self: BlockDecryptMut,
+    {
         InOutBuf::new(in_buf, out_buf).map(|b| self.decrypt_inout(b))
     }
 }
@@ -64,13 +81,6 @@ pub trait StreamCipher {
     /// If end of the keystream will be achieved with the given data length,
     /// method will return [`StreamCipherError`] without modifying provided `data`.
     fn try_apply_keystream(&mut self, buf: InOutBuf<'_, u8>) -> Result<(), StreamCipherError>;
-
-    /// Write keystream to `buf`.
-    ///
-    /// If end of the keystream will be achieved with the given data length,
-    /// method will return [`StreamCipherError`] without modifying provided `data`.
-    fn try_write_keystream(&mut self, buf: &mut [u8]) -> Result<(), StreamCipherError>;
-
     /// Apply keystream to `inout` data.
     ///
     /// It will XOR generated keystream with the data behind `in` pointer
@@ -115,16 +125,6 @@ pub trait StreamCipher {
             .map_err(|_| StreamCipherError)
             .and_then(|buf| self.try_apply_keystream(buf))
     }
-
-    /// Write keystream to `buf`.
-    ///
-    /// # Panics
-    /// If end of the keystream will be reached with the given data length,
-    /// method will panic without modifying `buf`.
-    #[inline]
-    fn write_keystream(&mut self, buf: &mut [u8]) {
-        self.try_write_keystream(buf).unwrap();
-    }
 }
 
 /// Trait for seekable stream ciphers.
@@ -165,11 +165,6 @@ impl<C: StreamCipher> StreamCipher for &mut C {
     #[inline]
     fn try_apply_keystream(&mut self, buf: InOutBuf<'_, u8>) -> Result<(), StreamCipherError> {
         C::try_apply_keystream(self, buf)
-    }
-
-    #[inline]
-    fn try_write_keystream(&mut self, buf: &mut [u8]) -> Result<(), StreamCipherError> {
-        C::try_write_keystream(self, buf)
     }
 }
 

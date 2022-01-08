@@ -1,8 +1,32 @@
-use crate::StreamCipherError;
+use crate::{ParBlocks, ParBlocksSizeUser, StreamCipherError};
 use core::convert::{TryFrom, TryInto};
-use crypto_common::{Block, BlockSizeUser};
-use generic_array::{typenum::Unsigned, ArrayLength, GenericArray};
-use inout::{ChunkProc, InOutBuf};
+use crypto_common::{
+    generic_array::{typenum::Unsigned, ArrayLength, GenericArray},
+    Block, BlockSizeUser,
+};
+use inout::{InOut, InOutBuf};
+
+pub trait StreamBackend: ParBlocksSizeUser {
+    fn gen_ks_block(&mut self, block: &mut Block<Self>);
+
+    fn gen_par_ks_blocks(&mut self, blocks: &mut ParBlocks<Self>) {
+        for block in blocks {
+            self.gen_ks_block(block);
+        }
+    }
+
+    #[inline(always)]
+    fn gen_tail_blocks(&mut self, blocks: &mut [Block<Self>]) {
+        assert!(blocks.len() < Self::ParBlocksSize::USIZE);
+        for block in blocks {
+            self.gen_ks_block(block);
+        }
+    }
+}
+
+pub trait StreamClosure: BlockSizeUser {
+    fn call<B: StreamBackend<BlockSize = Self::BlockSize>>(self, backend: &mut B);
+}
 
 /// Block-level synchronous stream ciphers.
 pub trait StreamCipherCore: BlockSizeUser + Sized {
@@ -13,39 +37,38 @@ pub trait StreamCipherCore: BlockSizeUser + Sized {
     /// to fit into `usize`.
     fn remaining_blocks(&self) -> Option<usize>;
 
-    /// Process `blocks` with generated keystream blocks.
-    ///
-    /// WARNING: this method does not check number of remaining blocks!
-    fn process_with_keystream_blocks<B: ChunkProc<Block<Self>>>(
-        &mut self,
-        blocks: B,
-        body: impl FnMut(B, &mut [Block<Self>]),
-    );
+    fn process_with_backend(&mut self, f: impl StreamClosure<BlockSize = Self::BlockSize>);
 
-    /// Apply keystream blocks with post hook.
+    /// Write keystream block.
     ///
     /// WARNING: this method does not check number of remaining blocks!
-    fn apply_keystream_blocks(
-        &mut self,
-        blocks: InOutBuf<'_, Block<Self>>,
-        mut post_fn: impl FnMut(&[Block<Self>]),
-    ) {
-        self.process_with_keystream_blocks(blocks, |mut chunk, keystream| {
-            apply_ks(chunk.reborrow(), keystream);
-            post_fn(chunk.get_out());
-        });
+    #[inline]
+    fn write_keystream_block(&mut self, block: &mut Block<Self>) {
+        self.process_with_backend(WriteBlockCtx { block });
     }
 
-    /// Write keystream blocks to `buf`.
+    /// Write keystream blocks.
     ///
     /// WARNING: this method does not check number of remaining blocks!
-    fn write_keystream_blocks(&mut self, buf: &mut [Block<Self>]) {
-        self.process_with_keystream_blocks(buf, |chunk, keystream| {
-            assert_eq!(chunk.len(), keystream.len());
-            for (a, b) in chunk.iter_mut().zip(keystream.iter()) {
-                a.copy_from_slice(b);
-            }
-        });
+    #[inline]
+    fn write_keystream_blocks(&mut self, blocks: &mut [Block<Self>]) {
+        self.process_with_backend(WriteBlocksCtx { blocks });
+    }
+
+    /// Apply keystream block.
+    ///
+    /// WARNING: this method does not check number of remaining blocks!
+    #[inline]
+    fn apply_keystream_block_inout(&mut self, block: InOut<'_, Block<Self>>) {
+        self.process_with_backend(ApplyBlockCtx { block });
+    }
+
+    /// Apply keystream blocks.
+    ///
+    /// WARNING: this method does not check number of remaining blocks!
+    #[inline]
+    fn apply_keystream_blocks_inout(&mut self, blocks: InOutBuf<'_, Block<Self>>) {
+        self.process_with_backend(ApplyBlocksCtx { blocks });
     }
 
     /// Try to apply keystream to data not divided into blocks.
@@ -55,6 +78,7 @@ pub trait StreamCipherCore: BlockSizeUser + Sized {
     ///
     /// Returns an error if number of remaining blocks is not sufficient
     /// for processing the input data.
+    #[inline]
     fn try_apply_keystream_partial(
         mut self,
         mut buf: InOutBuf<'_, u8>,
@@ -72,7 +96,7 @@ pub trait StreamCipherCore: BlockSizeUser + Sized {
 
         if buf.len() > Self::BlockSize::USIZE {
             let (blocks, tail) = buf.into_chunks();
-            self.apply_keystream_blocks(blocks, |_| {});
+            self.apply_keystream_blocks_inout(blocks);
             buf = tail;
         }
         let n = buf.len();
@@ -82,7 +106,7 @@ pub trait StreamCipherCore: BlockSizeUser + Sized {
         let mut block = Block::<Self>::default();
         block[..n].copy_from_slice(buf.reborrow().get_in());
         let mut t = InOutBuf::from_mut(&mut block);
-        self.apply_keystream_blocks(t.reborrow(), |_| {});
+        self.apply_keystream_blocks_inout(t.reborrow());
         buf.get_out().copy_from_slice(&block[..n]);
         Ok(())
     }
@@ -95,6 +119,7 @@ pub trait StreamCipherCore: BlockSizeUser + Sized {
     /// # Panics
     /// If number of remaining blocks is not sufficient for processing the
     /// input data.
+    #[inline]
     fn apply_keystream_partial(self, buf: InOutBuf<'_, u8>) {
         self.try_apply_keystream_partial(buf).unwrap()
     }
@@ -144,24 +169,111 @@ macro_rules! impl_counter {
 
 impl_counter! { u32 u64 u128 }
 
-type B<N> = GenericArray<u8, N>;
-
-fn apply_ks<N: ArrayLength<u8>>(blocks: InOutBuf<'_, B<N>>, ks: &[B<N>]) {
-    use core::ptr;
-
-    assert_eq!(blocks.len(), ks.len());
-    let n = blocks.len();
+/// Partition buffer into 2 parts: buffer of arrays and tail.
+///
+/// In case if `N` is less or equal to 1, buffer of arrays has length
+/// of zero and tail is equal to `self`.
+#[inline]
+pub fn into_chunks<T, N: ArrayLength<T>>(buf: &mut [T]) -> (&mut [GenericArray<T, N>], &mut [T]) {
+    use core::slice;
+    if N::USIZE <= 1 {
+        return (&mut [], buf);
+    }
+    let chunks_len = buf.len() / N::USIZE;
+    let tail_pos = N::USIZE * chunks_len;
+    let tail_len = buf.len() - tail_pos;
     unsafe {
-        let (in_ptr, out_ptr) = blocks.into_raw();
-        let ks_ptr = ks.as_ptr();
-        for i in 0..n {
-            let a = ptr::read(in_ptr.add(i));
-            let b = ptr::read(ks_ptr.add(i));
-            let mut res = GenericArray::<u8, N>::default();
-            for j in 0..N::USIZE {
-                res[j] = a[j] ^ b[j];
+        let ptr = buf.as_mut_ptr();
+        let chunks = slice::from_raw_parts_mut(ptr as *mut GenericArray<T, N>, chunks_len);
+        let tail = slice::from_raw_parts_mut(ptr.add(tail_pos), tail_len);
+        (chunks, tail)
+    }
+}
+
+struct WriteBlockCtx<'a, BS: ArrayLength<u8>> {
+    block: &'a mut Block<Self>,
+}
+impl<'a, BS: ArrayLength<u8>> BlockSizeUser for WriteBlockCtx<'a, BS> {
+    type BlockSize = BS;
+}
+impl<'a, BS: ArrayLength<u8>> StreamClosure for WriteBlockCtx<'a, BS> {
+    #[inline(always)]
+    fn call<B: StreamBackend<BlockSize = BS>>(self, backend: &mut B) {
+        backend.gen_ks_block(self.block);
+    }
+}
+
+struct WriteBlocksCtx<'a, BS: ArrayLength<u8>> {
+    blocks: &'a mut [Block<Self>],
+}
+impl<'a, BS: ArrayLength<u8>> BlockSizeUser for WriteBlocksCtx<'a, BS> {
+    type BlockSize = BS;
+}
+impl<'a, BS: ArrayLength<u8>> StreamClosure for WriteBlocksCtx<'a, BS> {
+    #[inline(always)]
+    fn call<B: StreamBackend<BlockSize = BS>>(self, backend: &mut B) {
+        if B::ParBlocksSize::USIZE > 1 {
+            let (chunks, tail) = into_chunks::<_, B::ParBlocksSize>(self.blocks);
+            for chunk in chunks {
+                backend.gen_par_ks_blocks(chunk);
             }
-            ptr::write(out_ptr.add(i), res);
+            backend.gen_tail_blocks(tail);
+        } else {
+            for block in self.blocks {
+                backend.gen_ks_block(block);
+            }
+        }
+    }
+}
+
+struct ApplyBlockCtx<'a, BS: ArrayLength<u8>> {
+    block: InOut<'a, Block<Self>>,
+}
+
+impl<'a, BS: ArrayLength<u8>> BlockSizeUser for ApplyBlockCtx<'a, BS> {
+    type BlockSize = BS;
+}
+
+impl<'a, BS: ArrayLength<u8>> StreamClosure for ApplyBlockCtx<'a, BS> {
+    #[inline(always)]
+    fn call<B: StreamBackend<BlockSize = BS>>(mut self, backend: &mut B) {
+        let mut t = Default::default();
+        backend.gen_ks_block(&mut t);
+        self.block.xor_in2out(&t);
+    }
+}
+
+struct ApplyBlocksCtx<'a, BS: ArrayLength<u8>> {
+    blocks: InOutBuf<'a, Block<Self>>,
+}
+
+impl<'a, BS: ArrayLength<u8>> BlockSizeUser for ApplyBlocksCtx<'a, BS> {
+    type BlockSize = BS;
+}
+
+impl<'a, BS: ArrayLength<u8>> StreamClosure for ApplyBlocksCtx<'a, BS> {
+    #[inline(always)]
+    fn call<B: StreamBackend<BlockSize = BS>>(self, backend: &mut B) {
+        if B::ParBlocksSize::USIZE > 1 {
+            let (chunks, mut tail) = self.blocks.into_chunks::<B::ParBlocksSize>();
+            for mut chunk in chunks {
+                let mut tmp = Default::default();
+                backend.gen_par_ks_blocks(&mut tmp);
+                chunk.xor_in2out(&tmp);
+            }
+            let n = tail.len();
+            let mut buf = GenericArray::<_, B::ParBlocksSize>::default();
+            let ks = &mut buf[..n];
+            backend.gen_tail_blocks(ks);
+            for i in 0..n {
+                tail.reborrow().get(i).xor_in2out(&ks[i]);
+            }
+        } else {
+            for mut block in self.blocks {
+                let mut t = Default::default();
+                backend.gen_ks_block(&mut t);
+                block.xor_in2out(&t);
+            }
         }
     }
 }
