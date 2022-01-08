@@ -325,3 +325,71 @@ impl<'a, BS: ArrayLength<u8>> BlockClosure for BlocksCtx<'a, BS> {
         }
     }
 }
+
+/// Implement simple block backend
+#[macro_export]
+macro_rules! impl_simple_block_encdec {
+    (
+        $cipher:ty, $block_size:ty, $state:ident, $block:ident,
+        encrypt: $enc_block:block
+        decrypt: $dec_block:block
+    ) => {
+        impl $crate::BlockSizeUser for $cipher {
+            type BlockSize = $block_size;
+        }
+
+        impl $crate::BlockEncrypt for $cipher {
+            fn encrypt_with_backend(&self, f: impl $crate::BlockClosure<BlockSize = $block_size>) {
+                struct EncBack<'a>(&'a $cipher);
+
+                impl<'a> $crate::BlockSizeUser for EncBack<'a> {
+                    type BlockSize = $block_size;
+                }
+
+                impl<'a> $crate::ParBlocksSizeUser for EncBack<'a> {
+                    type ParBlocksSize = $crate::consts::U1;
+                }
+
+                impl<'a> $crate::BlockBackend for EncBack<'a> {
+                    #[inline(always)]
+                    fn proc_block(
+                        &mut self,
+                        mut $block: $crate::inout::InOut<'_, $crate::Block<Self>>
+                    ) {
+                        let $state: &$cipher = self.0;
+                        $enc_block
+                    }
+                }
+
+                f.call(&mut EncBack(self))
+            }
+        }
+
+        impl $crate::BlockDecrypt for $cipher {
+            fn decrypt_with_backend(&self, f: impl $crate::BlockClosure<BlockSize = $block_size>) {
+                struct DecBack<'a>(&'a $cipher);
+
+                impl<'a> $crate::BlockSizeUser for DecBack<'a> {
+                    type BlockSize = $block_size;
+                }
+
+                impl<'a> $crate::ParBlocksSizeUser for DecBack<'a> {
+                    type ParBlocksSize = $crate::consts::U1;
+                }
+
+                impl<'a> $crate::BlockBackend for DecBack<'a> {
+                    #[inline(always)]
+                    fn proc_block(
+                        &mut self,
+                        mut $block: $crate::inout::InOut<'_, $crate::Block<Self>>
+                    ) {
+                        let $state: &$cipher = self.0;
+                        $dec_block
+                    }
+                }
+
+                f.call(&mut DecBack(self))
+            }
+        }
+    };
+}
