@@ -330,33 +330,34 @@ impl<'a, BS: ArrayLength<u8>> BlockClosure for BlocksCtx<'a, BS> {
 #[macro_export]
 macro_rules! impl_simple_block_encdec {
     (
-        $cipher:ty, $block_size:ty, $state:ident, $block:ident,
+        <$($N:ident$(:$b0:ident$(+$b:ident)*)?),*>
+        $cipher:ident, $block_size:ty, $state:ident, $block:ident,
         encrypt: $enc_block:block
         decrypt: $dec_block:block
     ) => {
-        impl $crate::BlockSizeUser for $cipher {
+        impl<$($N$(:$b0$(+$b)*)?),*> $crate::BlockSizeUser for $cipher<$($N),*> {
             type BlockSize = $block_size;
         }
 
-        impl $crate::BlockEncrypt for $cipher {
+        impl<$($N$(:$b0$(+$b)*)?),*> $crate::BlockEncrypt for $cipher<$($N),*> {
             fn encrypt_with_backend(&self, f: impl $crate::BlockClosure<BlockSize = $block_size>) {
-                struct EncBack<'a>(&'a $cipher);
+                struct EncBack<'a, $($N$(:$b0$(+$b)*)?),* >(&'a $cipher<$($N),*>);
 
-                impl<'a> $crate::BlockSizeUser for EncBack<'a> {
+                impl<'a, $($N$(:$b0$(+$b)*)?),* > $crate::BlockSizeUser for EncBack<'a, $($N),*> {
                     type BlockSize = $block_size;
                 }
 
-                impl<'a> $crate::ParBlocksSizeUser for EncBack<'a> {
+                impl<'a, $($N$(:$b0$(+$b)*)?),* > $crate::ParBlocksSizeUser for EncBack<'a, $($N),*> {
                     type ParBlocksSize = $crate::consts::U1;
                 }
 
-                impl<'a> $crate::BlockBackend for EncBack<'a> {
+                impl<'a, $($N$(:$b0$(+$b)*)?),* > $crate::BlockBackend for EncBack<'a, $($N),*> {
                     #[inline(always)]
                     fn proc_block(
                         &mut self,
                         mut $block: $crate::inout::InOut<'_, $crate::Block<Self>>
                     ) {
-                        let $state: &$cipher = self.0;
+                        let $state: &$cipher<$($N),*> = self.0;
                         $enc_block
                     }
                 }
@@ -365,25 +366,25 @@ macro_rules! impl_simple_block_encdec {
             }
         }
 
-        impl $crate::BlockDecrypt for $cipher {
+        impl<$($N$(:$b0$(+$b)*)?),*> $crate::BlockDecrypt for $cipher<$($N),*> {
             fn decrypt_with_backend(&self, f: impl $crate::BlockClosure<BlockSize = $block_size>) {
-                struct DecBack<'a>(&'a $cipher);
+                struct DecBack<'a, $($N$(:$b0$(+$b)*)?),* >(&'a $cipher<$($N),*>);
 
-                impl<'a> $crate::BlockSizeUser for DecBack<'a> {
+                impl<'a, $($N$(:$b0$(+$b)*)?),* > $crate::BlockSizeUser for DecBack<'a, $($N),*> {
                     type BlockSize = $block_size;
                 }
 
-                impl<'a> $crate::ParBlocksSizeUser for DecBack<'a> {
+                impl<'a, $($N$(:$b0$(+$b)*)?),* > $crate::ParBlocksSizeUser for DecBack<'a, $($N),*> {
                     type ParBlocksSize = $crate::consts::U1;
                 }
 
-                impl<'a> $crate::BlockBackend for DecBack<'a> {
+                impl<'a, $($N$(:$b0$(+$b)*)?),* > $crate::BlockBackend for DecBack<'a, $($N),*> {
                     #[inline(always)]
                     fn proc_block(
                         &mut self,
                         mut $block: $crate::inout::InOut<'_, $crate::Block<Self>>
                     ) {
-                        let $state: &$cipher = self.0;
+                        let $state: &$cipher<$($N),*> = self.0;
                         $dec_block
                     }
                 }
@@ -391,5 +392,16 @@ macro_rules! impl_simple_block_encdec {
                 f.call(&mut DecBack(self))
             }
         }
+    };
+    (
+        $cipher:ident, $block_size:ty, $state:ident, $block:ident,
+        encrypt: $enc_block:block
+        decrypt: $dec_block:block
+    ) => {
+        $crate::impl_simple_block_encdec!(
+            <> $cipher, $block_size, $state, $block,
+            encrypt: $enc_block
+            decrypt: $dec_block
+        );
     };
 }
