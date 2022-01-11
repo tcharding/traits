@@ -104,9 +104,9 @@ pub trait StreamCipherCore: BlockSizeUser + Sized {
             return Ok(());
         }
         let mut block = Block::<Self>::default();
-        block[..n].copy_from_slice(buf.reborrow().get_in());
-        let mut t = InOutBuf::from_mut(&mut block);
-        self.apply_keystream_blocks_inout(t.reborrow());
+        block[..n].copy_from_slice(buf.get_in());
+        let t = InOutBuf::from_mut(&mut block);
+        self.apply_keystream_blocks_inout(t);
         buf.get_out().copy_from_slice(&block[..n]);
         Ok(())
     }
@@ -267,7 +267,7 @@ impl<'a, BS: ArrayLength<u8>> StreamClosure for ApplyBlocksCtx<'a, BS> {
             let ks = &mut buf[..n];
             backend.gen_tail_blocks(ks);
             for i in 0..n {
-                tail.reborrow().get(i).xor_in2out(&ks[i]);
+                tail.get(i).xor_in2out(&ks[i]);
             }
         } else {
             for mut block in self.blocks {

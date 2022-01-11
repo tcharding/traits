@@ -20,7 +20,7 @@ pub trait AsyncStreamCipher: Sized {
         let mut block = Block::<Self>::default();
         let n = tail.len();
         if n != 0 {
-            block[..n].copy_from_slice(tail.reborrow().get_in());
+            block[..n].copy_from_slice(tail.get_in());
             self.encrypt_block_mut(&mut block);
             tail.get_out().copy_from_slice(&block[..n]);
         }
@@ -36,7 +36,7 @@ pub trait AsyncStreamCipher: Sized {
         let mut block = Block::<Self>::default();
         let n = tail.len();
         if n != 0 {
-            block[..n].copy_from_slice(tail.reborrow().get_in());
+            block[..n].copy_from_slice(tail.get_in());
             self.decrypt_block_mut(&mut block);
             tail.get_out().copy_from_slice(&block[..n]);
         }
