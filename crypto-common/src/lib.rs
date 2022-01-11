@@ -36,6 +36,11 @@ pub type Iv<B> = GenericArray<u8, <B as IvSizeUser>::IvSize>;
 pub trait BlockSizeUser {
     /// Size of the block in bytes.
     type BlockSize: ArrayLength<u8> + 'static;
+
+    /// Return block size in bytes.
+    fn block_size() -> usize {
+        Self::BlockSize::USIZE
+    }
 }
 
 impl<T: BlockSizeUser> BlockSizeUser for &T {
@@ -50,6 +55,11 @@ impl<T: BlockSizeUser> BlockSizeUser for &mut T {
 pub trait OutputSizeUser {
     /// Size of the output in bytes.
     type OutputSize: ArrayLength<u8> + 'static;
+
+    /// Return output size in bytes.
+    fn output_size() -> usize {
+        Self::OutputSize::USIZE
+    }
 }
 
 /// Types which use key for initialization.
@@ -58,6 +68,11 @@ pub trait OutputSizeUser {
 pub trait KeySizeUser {
     /// Key size in bytes.
     type KeySize: ArrayLength<u8> + 'static;
+
+    /// Return key size in bytes.
+    fn key_size() -> usize {
+        Self::KeySize::USIZE
+    }
 }
 
 /// Types which use initialization vector (nonce) for initialization.
@@ -66,6 +81,11 @@ pub trait KeySizeUser {
 pub trait IvSizeUser {
     /// Initialization vector size in bytes.
     type IvSize: ArrayLength<u8> + 'static;
+
+    /// Return IV size in bytes.
+    fn key_size() -> usize {
+        Self::IvSize::USIZE
+    }
 }
 
 /// Types which use another type for initialization.
