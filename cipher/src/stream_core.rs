@@ -67,6 +67,16 @@ pub trait StreamCipherCore: BlockSizeUser + Sized {
     ///
     /// WARNING: this method does not check number of remaining blocks!
     #[inline]
+    fn apply_keystream_blocks(&mut self, blocks: &mut [Block<Self>]) {
+        self.process_with_backend(ApplyBlocksCtx {
+            blocks: blocks.into(),
+        });
+    }
+
+    /// Apply keystream blocks.
+    ///
+    /// WARNING: this method does not check number of remaining blocks!
+    #[inline]
     fn apply_keystream_blocks_inout(&mut self, blocks: InOutBuf<'_, Block<Self>>) {
         self.process_with_backend(ApplyBlocksCtx { blocks });
     }

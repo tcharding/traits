@@ -97,6 +97,46 @@ macro_rules! block_cipher_test {
     };
 }
 
+/// Define `IvState` test
+#[macro_export]
+#[cfg_attr(docsrs, doc(cfg(feature = "dev")))]
+macro_rules! iv_state_test {
+    ($name:ident, $cipher:ty, $method:ident $(,)?) => {
+        #[test]
+        fn $name() {
+            use cipher::*;
+
+            let mut blocks = [Block::<$cipher>::default(); 32];
+
+            for (i, block) in blocks.iter_mut().enumerate() {
+                for (j, b) in block.iter_mut().enumerate() {
+                    *b = (i + j) as u8;
+                }
+            }
+
+            let mut key = Key::<$cipher>::default();
+            let mut iv = Iv::<$cipher>::default();
+            key.iter_mut().for_each(|b| *b = 0x42);
+            iv.iter_mut().for_each(|b| *b = 0x24);
+
+            let mut cipher = <$cipher>::new(&key, &iv);
+            let mut target = blocks.clone();
+            cipher.$method(&mut target);
+
+            for i in 0..32 {
+                let mut blocks = blocks.clone();
+                let (b1, b2) = blocks.split_at_mut(i);
+                let mut cipher1 = <$cipher>::new(&key, &iv);
+                cipher1.$method(b1);
+                let temp_iv = cipher1.iv_state();
+                let mut cipher2 = <$cipher>::new(&key, &temp_iv);
+                cipher2.$method(b2);
+                assert_eq!(blocks, target);
+            }
+        }
+    };
+}
+
 /// Define block encryptor benchmark
 #[macro_export]
 #[cfg_attr(docsrs, doc(cfg(feature = "dev")))]
