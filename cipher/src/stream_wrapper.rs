@@ -97,7 +97,10 @@ where
     Le<T::BlockSize, U256>: NonZero,
 {
     #[inline]
-    fn try_apply_keystream(&mut self, mut data: InOutBuf<'_, u8>) -> Result<(), StreamCipherError> {
+    fn try_apply_keystream_inout(
+        &mut self,
+        mut data: InOutBuf<'_, u8>,
+    ) -> Result<(), StreamCipherError> {
         self.check_remaining(data.len())?;
 
         let pos = self.get_pos();

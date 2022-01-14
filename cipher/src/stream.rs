@@ -76,11 +76,22 @@ pub trait AsyncStreamCipher: Sized {
 
 /// Synchronous stream cipher core trait.
 pub trait StreamCipher {
+    /// Apply keystream to `inout` data.
+    ///
+    /// If end of the keystream will be achieved with the given data length,
+    /// method will return [`StreamCipherError`] without modifying provided `data`.
+    fn try_apply_keystream_inout(&mut self, buf: InOutBuf<'_, u8>)
+        -> Result<(), StreamCipherError>;
+
     /// Apply keystream to data behind `buf`.
     ///
     /// If end of the keystream will be achieved with the given data length,
     /// method will return [`StreamCipherError`] without modifying provided `data`.
-    fn try_apply_keystream(&mut self, buf: InOutBuf<'_, u8>) -> Result<(), StreamCipherError>;
+    #[inline]
+    fn try_apply_keystream(&mut self, buf: &mut [u8]) -> Result<(), StreamCipherError> {
+        self.try_apply_keystream_inout(buf.into())
+    }
+
     /// Apply keystream to `inout` data.
     ///
     /// It will XOR generated keystream with the data behind `in` pointer
@@ -91,7 +102,7 @@ pub trait StreamCipher {
     /// method will panic without modifying the provided `data`.
     #[inline]
     fn apply_keystream_inout(&mut self, buf: InOutBuf<'_, u8>) {
-        self.try_apply_keystream(buf).unwrap();
+        self.try_apply_keystream_inout(buf).unwrap();
     }
 
     /// Apply keystream to data in-place.
@@ -123,7 +134,7 @@ pub trait StreamCipher {
     ) -> Result<(), StreamCipherError> {
         InOutBuf::new(input, output)
             .map_err(|_| StreamCipherError)
-            .and_then(|buf| self.try_apply_keystream(buf))
+            .and_then(|buf| self.try_apply_keystream_inout(buf))
     }
 }
 
@@ -163,8 +174,11 @@ pub trait StreamCipherSeek {
 
 impl<C: StreamCipher> StreamCipher for &mut C {
     #[inline]
-    fn try_apply_keystream(&mut self, buf: InOutBuf<'_, u8>) -> Result<(), StreamCipherError> {
-        C::try_apply_keystream(self, buf)
+    fn try_apply_keystream_inout(
+        &mut self,
+        buf: InOutBuf<'_, u8>,
+    ) -> Result<(), StreamCipherError> {
+        C::try_apply_keystream_inout(self, buf)
     }
 }
 
