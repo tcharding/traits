@@ -2,12 +2,12 @@
 
 use crate::{
     bigint::Encoding as _,
-    hex,
     ops::{Invert, Reduce, ReduceNonZero},
     rand_core::{CryptoRng, RngCore},
     Curve, Error, FieldBytes, IsHigh, PrimeCurve, Result, Scalar, ScalarArithmetic, ScalarCore,
     SecretKey,
 };
+use base16ct::HexDisplay;
 use core::{
     fmt,
     ops::{Deref, Mul, Neg},
@@ -170,11 +170,13 @@ impl<C> Invert for NonZeroScalar<C>
 where
     C: Curve + ScalarArithmetic,
 {
-    type Output = Scalar<C>;
+    type Output = Self;
 
-    /// Perform a scalar inversion
-    fn invert(&self) -> CtOption<Self::Output> {
-        ff::Field::invert(&self.scalar)
+    fn invert(&self) -> Self {
+        Self {
+            // This will always succeed since `scalar` will never be 0
+            scalar: ff::Field::invert(&self.scalar).unwrap(),
+        }
     }
 }
 
@@ -298,7 +300,7 @@ where
     C: Curve + ScalarArithmetic,
 {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        hex::write_lower(&self.to_repr(), f)
+        write!(f, "{:x}", HexDisplay(&self.to_repr()))
     }
 }
 
@@ -307,7 +309,7 @@ where
     C: Curve + ScalarArithmetic,
 {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        hex::write_upper(&self.to_repr(), f)
+        write!(f, "{:}", HexDisplay(&self.to_repr()))
     }
 }
 
@@ -319,8 +321,12 @@ where
 
     fn from_str(hex: &str) -> Result<Self> {
         let mut bytes = FieldBytes::<C>::default();
-        hex::decode(hex, &mut bytes)?;
-        Option::from(Self::from_repr(bytes)).ok_or(Error)
+
+        if base16ct::mixed::decode(hex, &mut bytes)?.len() == bytes.len() {
+            Option::from(Self::from_repr(bytes)).ok_or(Error)
+        } else {
+            Err(Error)
+        }
     }
 }
 

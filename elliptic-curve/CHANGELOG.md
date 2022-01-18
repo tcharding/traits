@@ -4,6 +4,43 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 0.11.9 (2022-01-17)
+### Changed
+- Activate `bits`, `hash2curve`, and `voprf` features on docs.rs ([#891])
+
+[#891]: https://github.com/RustCrypto/traits/pull/891
+
+## 0.11.8 (2022-01-15)
+### Added
+- Impl `ZeroizeOnDrop` on appropriate items ([#884])
+
+### Changed
+- Use the `base16ct` crate for hex serialization ([#886], [#887], [#888])
+
+[#884]: https://github.com/RustCrypto/traits/pull/884
+[#886]: https://github.com/RustCrypto/traits/pull/886
+[#887]: https://github.com/RustCrypto/traits/pull/887
+[#888]: https://github.com/RustCrypto/traits/pull/888
+
+## 0.11.7 (2022-01-14)
+### Added
+- Initial hash-to-field support ([#854], [#855], [#871], [#874])
+- Initial hash-to-curve support ([#865], [#876])
+- Impl `Mul` for `NonZeroScalar` * `NonZeroScalar` ([#857], [#862])
+- `Reduce::from_*e_digest_reduced` ([#869])
+- `VoprfParameters` trait ([#878])
+
+[#854]: https://github.com/RustCrypto/traits/pull/854
+[#855]: https://github.com/RustCrypto/traits/pull/855
+[#857]: https://github.com/RustCrypto/traits/pull/857
+[#862]: https://github.com/RustCrypto/traits/pull/862
+[#865]: https://github.com/RustCrypto/traits/pull/865
+[#869]: https://github.com/RustCrypto/traits/pull/869
+[#871]: https://github.com/RustCrypto/traits/pull/871
+[#874]: https://github.com/RustCrypto/traits/pull/874
+[#876]: https://github.com/RustCrypto/traits/pull/876
+[#878]: https://github.com/RustCrypto/traits/pull/878
+
 ## 0.11.6 (2021-12-20)
 ### Added
 - Type conversions chart ([#852])

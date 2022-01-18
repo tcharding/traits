@@ -2,7 +2,6 @@
 
 use crate::{
     bigint::{prelude::*, Limb, NonZero},
-    hex,
     rand_core::{CryptoRng, RngCore},
     subtle::{
         Choice, ConditionallySelectable, ConstantTimeEq, ConstantTimeGreater, ConstantTimeLess,
@@ -10,6 +9,7 @@ use crate::{
     },
     Curve, Error, FieldBytes, IsHigh, Result,
 };
+use base16ct::HexDisplay;
 use core::{
     cmp::Ordering,
     fmt,
@@ -376,7 +376,7 @@ where
     C: Curve,
 {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        hex::write_lower(&self.to_be_bytes(), f)
+        write!(f, "{:x}", HexDisplay(&self.to_be_bytes()))
     }
 }
 
@@ -385,7 +385,7 @@ where
     C: Curve,
 {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        hex::write_upper(&self.to_be_bytes(), f)
+        write!(f, "{:X}", HexDisplay(&self.to_be_bytes()))
     }
 }
 
@@ -397,7 +397,7 @@ where
 
     fn from_str(hex: &str) -> Result<Self> {
         let mut bytes = FieldBytes::<C>::default();
-        hex::decode(hex, &mut bytes)?;
+        base16ct::lower::decode(hex, &mut bytes)?;
         Option::from(Self::from_be_bytes(bytes)).ok_or(Error)
     }
 }

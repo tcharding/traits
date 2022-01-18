@@ -1,13 +1,13 @@
 #![no_std]
 #![cfg_attr(docsrs, feature(doc_cfg))]
-#![forbid(unsafe_code, clippy::unwrap_used)]
-#![warn(missing_docs, rust_2018_idioms, unused_qualifications)]
+#![doc = include_str!("../README.md")]
 #![doc(
     html_logo_url = "https://raw.githubusercontent.com/RustCrypto/media/8f1a9894/logo.svg",
     html_favicon_url = "https://raw.githubusercontent.com/RustCrypto/media/8f1a9894/logo.svg",
-    html_root_url = "https://docs.rs/elliptic-curve/0.11.6"
+    html_root_url = "https://docs.rs/elliptic-curve/0.12.0-pre"
 )]
-#![doc = include_str!("../README.md")]
+#![forbid(unsafe_code, clippy::unwrap_used)]
+#![warn(missing_docs, rust_2018_idioms, unused_qualifications)]
 
 //! ## Usage
 //!
@@ -73,7 +73,6 @@ pub mod ops;
 pub mod sec1;
 
 mod error;
-mod hex;
 mod point;
 mod scalar;
 mod secret_key;
@@ -222,4 +221,21 @@ pub trait AlgorithmParameters: Curve {
             parameters: Some((&Self::OID).into()),
         }
     }
+}
+
+/// Elliptic curve parameters used by VOPRF.
+#[cfg(feature = "voprf")]
+#[cfg_attr(docsrs, doc(cfg(feature = "voprf")))]
+pub trait VoprfParameters: Curve {
+    /// The `ID` parameter which identifies a particular elliptic curve
+    /// as defined in [section 4 of `draft-irtf-cfrg-voprf-08`][voprf].
+    ///
+    /// [voprf]: https://www.ietf.org/archive/id/draft-irtf-cfrg-voprf-08.html#section-4
+    const ID: u16;
+
+    /// The `Hash` parameter which assigns a particular hash function to this
+    /// ciphersuite as defined in [section 4 of `draft-irtf-cfrg-voprf-08`][voprf].
+    ///
+    /// [voprf]: https://www.ietf.org/archive/id/draft-irtf-cfrg-voprf-08.html#section-4
+    type Hash: digest::Digest;
 }
