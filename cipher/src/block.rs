@@ -269,6 +269,8 @@ impl<Alg: BlockDecrypt> BlockDecryptMut for Alg {
     }
 }
 
+impl<Alg: BlockCipher> BlockCipher for &Alg {}
+
 impl<Alg: BlockEncrypt> BlockEncrypt for &Alg {
     fn encrypt_with_backend(&self, f: impl BlockClosure<BlockSize = Self::BlockSize>) {
         Alg::encrypt_with_backend(self, f);
