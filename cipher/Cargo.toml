@@ -20,7 +20,7 @@ blobby = { version = "0.3", optional = true }
 
 [features]
 std = ["crypto-common/std"]
-rand_core = ["crypto-common/rand_core"]
+rand_core = ["crypto-common/rand_core"] # Enable random key and IV generation methods
 dev = ["blobby"]
 
 [package.metadata.docs.rs]

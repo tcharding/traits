@@ -115,7 +115,7 @@ pub trait StreamCipher {
     /// method will panic without modifying the provided `data`.
     #[inline]
     fn apply_keystream(&mut self, buf: &mut [u8]) {
-        self.try_apply_keystream(buf.into()).unwrap();
+        self.try_apply_keystream(buf).unwrap();
     }
 
     /// Apply keystream to data buffer-to-buffer.

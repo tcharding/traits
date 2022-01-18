@@ -21,6 +21,10 @@ pub use inout;
 #[cfg(feature = "std")]
 extern crate std;
 
+#[cfg(feature = "rand_core")]
+#[cfg_attr(docsrs, doc(cfg(feature = "rand_core")))]
+pub use crypto_common::rand_core;
+
 #[cfg(feature = "dev")]
 pub use blobby;
 
