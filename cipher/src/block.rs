@@ -13,10 +13,7 @@
 use crate::{ParBlocks, ParBlocksSizeUser};
 use inout::{InOut, InOutBuf, NotEqualError};
 
-pub use crypto_common::{
-    generic_array::{typenum::Unsigned, ArrayLength},
-    Block, BlockSizeUser,
-};
+pub use crypto_common::{generic_array::ArrayLength, typenum::Unsigned, Block, BlockSizeUser};
 
 /// Marker trait for block ciphers.
 pub trait BlockCipher: BlockSizeUser {}

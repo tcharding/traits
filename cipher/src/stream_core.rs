@@ -1,7 +1,8 @@
 use crate::{ParBlocks, ParBlocksSizeUser, StreamCipherError};
 use core::convert::{TryFrom, TryInto};
 use crypto_common::{
-    generic_array::{typenum::Unsigned, ArrayLength, GenericArray},
+    generic_array::{ArrayLength, GenericArray},
+    typenum::Unsigned,
     Block, BlockSizeUser,
 };
 use inout::{InOut, InOutBuf};

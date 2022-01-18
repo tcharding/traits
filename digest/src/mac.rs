@@ -4,7 +4,7 @@ use crypto_common::{InvalidLength, Key, KeyInit, Output, OutputSizeUser, Reset};
 #[cfg(feature = "rand_core")]
 use crate::rand_core::{CryptoRng, RngCore};
 use core::fmt;
-use generic_array::typenum::Unsigned;
+use crypto_common::typenum::Unsigned;
 use subtle::{Choice, ConstantTimeEq};
 
 /// Marker trait for Message Authentication algorithms.
@@ -36,6 +36,10 @@ pub trait Mac: OutputSizeUser + Sized {
 
     /// Update state using the provided data.
     fn update(&mut self, data: &[u8]);
+
+    /// Process input data in a chained manner.
+    #[must_use]
+    fn chain_update(self, data: impl AsRef<[u8]>) -> Self;
 
     /// Obtain the result of a [`Mac`] computation as a [`CtOutput`] and consume
     /// [`Mac`] instance.
@@ -95,6 +99,12 @@ impl<T: Update + FixedOutput + MacMarker> Mac for T {
     #[inline]
     fn update(&mut self, data: &[u8]) {
         Update::update(self, data);
+    }
+
+    #[inline]
+    fn chain_update(mut self, data: impl AsRef<[u8]>) -> Self {
+        Update::update(&mut self, data.as_ref());
+        self
     }
 
     #[inline]

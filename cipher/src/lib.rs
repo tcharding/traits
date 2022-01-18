@@ -36,7 +36,8 @@ mod stream_wrapper;
 
 pub use crate::{block::*, errors::*, stream::*, stream_core::*, stream_wrapper::*};
 pub use crypto_common::{
-    generic_array::{self, typenum::consts},
+    generic_array,
+    typenum::{self, consts},
     AlgorithmName, Block, InnerIvInit, InvalidLength, Iv, IvSizeUser, Key, KeyInit, KeyIvInit,
     KeySizeUser,
 };

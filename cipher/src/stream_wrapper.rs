@@ -3,7 +3,7 @@ use crate::{
     StreamCipherSeek, StreamCipherSeekCore,
 };
 use crypto_common::{
-    generic_array::typenum::{IsLess, Le, NonZero, Unsigned, U256},
+    typenum::{IsLess, Le, NonZero, Unsigned, U256},
     BlockSizeUser, Iv, IvSizeUser, Key, KeyInit, KeyIvInit, KeySizeUser,
 };
 use inout::InOutBuf;

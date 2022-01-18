@@ -17,6 +17,7 @@ extern crate std;
 pub use rand_core;
 
 pub use generic_array;
+pub use generic_array::typenum;
 
 use core::fmt;
 use generic_array::{typenum::Unsigned, ArrayLength, GenericArray};
