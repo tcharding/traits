@@ -32,6 +32,15 @@ where
         &self.core
     }
 
+    /// Return reference to the core type.
+    pub fn from_core(core: T) -> Self {
+        Self {
+            core,
+            buffer: Default::default(),
+            pos: 0,
+        }
+    }
+
     /// Return current cursor position.
     #[inline]
     fn get_pos(&self) -> usize {
