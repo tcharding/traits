@@ -35,6 +35,21 @@ pub trait BlockBackend: ParBlocksSizeUser {
             self.proc_block(block);
         }
     }
+
+    #[inline(always)]
+    fn proc_block_inplace(&mut self, block: &mut Block<Self>) {
+        self.proc_block(block.into());
+    }
+
+    #[inline(always)]
+    fn proc_par_blocks_inplace(&mut self, blocks: &mut ParBlocks<Self>) {
+        self.proc_par_blocks(blocks.into());
+    }
+
+    #[inline(always)]
+    fn proc_tail_blocks_inplace(&mut self, blocks: &mut [Block<Self>]) {
+        self.proc_tail_blocks(blocks.into());
+    }
 }
 
 pub trait BlockClosure: BlockSizeUser {
