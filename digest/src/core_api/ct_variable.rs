@@ -27,6 +27,23 @@ where
     _out: PhantomData<OutSize>,
 }
 
+impl<T, OutSize> CtVariableCoreWrapper<T, OutSize>
+where
+    T: VariableOutputCore,
+    OutSize: ArrayLength<u8> + IsLessOrEqual<T::OutputSize>,
+    LeEq<OutSize, T::OutputSize>: NonZero,
+    T::BlockSize: IsLess<U256>,
+    Le<T::BlockSize, U256>: NonZero,
+{
+    /// Constructs a wrapped type from the inner type.
+    pub fn from_inner(inner: T) -> Self {
+        Self {
+            inner,
+            _out: PhantomData,
+        }
+    }
+}
+
 impl<T, OutSize> HashMarker for CtVariableCoreWrapper<T, OutSize>
 where
     T: VariableOutputCore + HashMarker,
